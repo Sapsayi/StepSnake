@@ -5,7 +5,9 @@ using UnityEngine;
 
 public class MainProcess : MonoBehaviour
 {
-    [SerializeField] private List<Vector2IntSer> startPlayerSegments;
+    [SerializeField] private List<Vector2Int> startPlayerSegments;
+
+    private int turn;
     
     private void Start()
     {
@@ -19,7 +21,9 @@ public class MainProcess : MonoBehaviour
         {
             yield return new WaitUntil(() =>
                 GetMoveDirection() != Vector2Int.zero && Player.Instance.CanMove(GetMoveDirection()));
+            turn++;
             Player.Instance.Move(GetMoveDirection());
+            ConsumablesController.Instance.Tick(turn);
             yield return null;
         }
     }

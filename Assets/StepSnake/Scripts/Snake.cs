@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public abstract class Snake : MonoBehaviour
@@ -7,10 +8,10 @@ public abstract class Snake : MonoBehaviour
     [SerializeField] private Color color;
     [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
     
-    private readonly List<Vector2IntSer> segments = new();
+    private readonly List<Vector2Int> segments = new();
     private readonly List<SpriteRenderer> sprites = new();
 
-    public void Init(List<Vector2IntSer> segments)
+    public void Init(List<Vector2Int> segments)
     {
         this.segments.AddRange(segments);
         UpdateSprites(new Vector2Int(0, 1));
@@ -18,8 +19,8 @@ public abstract class Snake : MonoBehaviour
 
     public bool CanMove(Vector2Int direction)
     {
-        var nextPos = (Vector2Int)segments[0] + direction;
-        if (segments.Count > 1 && nextPos == (Vector2Int)segments[1])
+        var nextPos = segments[0] + direction;
+        if (segments.Count > 1 && nextPos == segments[1])
             return false;
         return GridFiller.Instance.CheckBorders(nextPos);
     }
@@ -30,7 +31,7 @@ public abstract class Snake : MonoBehaviour
         {
             segments[i] = segments[i - 1];
         }
-        segments[0] = new Vector2IntSer(direction.x + segments[0].x, direction.y + segments[0].y);
+        segments[0] += direction;
         UpdateSprites(direction);
     }
 
@@ -71,8 +72,8 @@ public abstract class Snake : MonoBehaviour
 
     private void DrawBody(int index)
     {
-        var direction1 = (Vector2Int)segments[index - 1] - (Vector2Int)segments[index];
-        var direction2 = (Vector2Int)segments[index + 1] - (Vector2Int)segments[index];
+        var direction1 = segments[index - 1] - segments[index];
+        var direction2 = segments[index + 1] - segments[index];
         if (direction1.x == direction2.x)
         {
             sprites[index].sprite = snakeSegmentsConfig.straightBody;
@@ -98,7 +99,7 @@ public abstract class Snake : MonoBehaviour
             return;
         int lastIndex = sprites.Count - 1;
         sprites[lastIndex].sprite = snakeSegmentsConfig.tail;
-        var direction = (Vector2Int)segments[lastIndex - 1] - (Vector2Int)segments[lastIndex];
+        var direction = segments[lastIndex - 1] - segments[lastIndex];
         sprites[lastIndex].transform.eulerAngles = GetRotation(direction);
     }
     
@@ -113,5 +114,12 @@ public abstract class Snake : MonoBehaviour
         if (direction == new Vector2Int(-1, 0))
             return new Vector3(0, 0, 90);
         return new Vector3(0, 0, 0);
+    }
+
+    public List<Vector2Int> GetSegments()
+    {
+        var list = new List<Vector2Int>();
+        list.AddRange(segments);
+        return list;
     }
 }

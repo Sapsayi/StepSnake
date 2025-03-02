@@ -28,16 +28,17 @@ public class GridFiller : MonoBehaviour
             for (int y = 0; y < gridSize.y; y++)
             {
                 isLight = !isLight;
-                var pos = GetWorldPos(new Vector2IntSer(x, y));
+                var pos = GetWorldPos(new Vector2Int(x, y));
+                pos = new Vector3(pos.x, pos.y, transform.position.z);
                 Instantiate(isLight ? lightSquare : darkSquare, pos, Quaternion.identity, transform);
             }
         }
     }
 
-    public Vector3 GetWorldPos(Vector2IntSer pos)
+    public Vector3 GetWorldPos(Vector2Int pos)
     {
         var startPos = new Vector2(cellSize.x * -gridSize.x / 2f, cellSize.y * -gridSize.y / 2f);
-        var worldPos = new Vector3(startPos.x + cellSize.x * pos.x, startPos.y + cellSize.y * pos.y, transform.position.z);
+        var worldPos = new Vector3(startPos.x + cellSize.x * pos.x, startPos.y + cellSize.y * pos.y, 0);
         return worldPos + offset;
     }
 
