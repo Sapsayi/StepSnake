@@ -19,24 +19,29 @@ public class MainProcess : MonoBehaviour
     {
         while (true)
         {
-            yield return new WaitUntil(() =>
-                GetMoveDirection() != Vector2Int.zero && Player.Instance.CanMove(GetMoveDirection()));
+            Vector2Int direction;
+            do
+            {
+                yield return null;
+                direction = GetMoveDirection();
+            } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
+
             turn++;
-            Player.Instance.Move(GetMoveDirection());
+            Player.Instance.Move(direction);
             ConsumablesController.Instance.Tick(turn);
-            yield return null;
+            yield return new WaitForSeconds(0.1f);
         }
     }
 
     private Vector2Int GetMoveDirection()
     {
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
             return new Vector2Int(0, 1);
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
             return new Vector2Int(1, 0);
-        if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKey(KeyCode.S) || Input.GetKey(KeyCode.DownArrow))
             return new Vector2Int(0, -1);
-        if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
             return new Vector2Int(-1, 0);
         return Vector2Int.zero;
     }
