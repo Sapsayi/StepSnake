@@ -39,9 +39,9 @@ public class ConsumablesController : MonoBehaviour
         var suitablePositions = new List<Vector2Int>();
         var playerSegments = Player.Instance.GetSegments();
         
-        for (int x = 0; x < GridFiller.Instance.GridSize.x; x++)
+        for (int x = 0; x < GridManager.Instance.GridSize.x; x++)
         {
-            for (int y = 0; y < GridFiller.Instance.GridSize.y; y++)
+            for (int y = 0; y < GridManager.Instance.GridSize.y; y++)
             {
                 var pos = new Vector2Int(x, y);
                 if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;

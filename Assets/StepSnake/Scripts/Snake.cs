@@ -22,7 +22,7 @@ public abstract class Snake : MonoBehaviour
         var nextPos = segments[0] + direction;
         if (segments.Count > 1 && nextPos == segments[1])
             return false;
-        return GridFiller.Instance.CheckBorders(nextPos);
+        return GridManager.Instance.CheckBorders(nextPos);
     }
     
     public void Move(Vector2Int direction)
@@ -43,7 +43,7 @@ public abstract class Snake : MonoBehaviour
         {
             if (sprites.Count == i)
                 sprites.Add(Instantiate(spritePrefab, transform));
-            sprites[i].transform.position = GridFiller.Instance.GetWorldPos(segments[i]);
+            sprites[i].transform.position = new Vector3(segments[i].x, segments[i].y, transform.position.z);
         }
         
         ApplyColor();
