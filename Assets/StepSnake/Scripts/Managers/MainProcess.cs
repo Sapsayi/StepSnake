@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MainProcess : MonoBehaviour
 {
@@ -13,6 +14,14 @@ public class MainProcess : MonoBehaviour
     {
         Player.Instance.Init(startPlayerSegments);
         StartCoroutine(ProcessRoutine());
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
     }
 
     private IEnumerator ProcessRoutine()
@@ -27,6 +36,12 @@ public class MainProcess : MonoBehaviour
             } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
 
             turn++;
+
+            if (Player.Instance.CheckSelfKill(direction))
+            {
+                UI.Instance.OpenDeathScene();
+                yield break;
+            }
             
             Player.Instance.CheckConsumable(direction);
             Player.Instance.Move(direction);

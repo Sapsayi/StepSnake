@@ -24,6 +24,17 @@ public abstract class Snake : MonoBehaviour
         return GridManager.Instance.CheckBorders(nextPos);
     }
 
+    public bool CheckSelfKill(Vector2Int direction)
+    {
+        foreach (var segment in segments)
+        {
+            if (segment == segments[0] + direction)
+                return true;
+        }
+
+        return false;
+    }
+    
     public void CheckConsumable(Vector2Int direction)
     {
         var consumable = ConsumablesController.Instance.GetConsumable(segments[0] + direction);
