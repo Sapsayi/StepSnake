@@ -24,6 +24,15 @@ public abstract class Snake : MonoBehaviour
             return false;
         return GridManager.Instance.CheckBorders(nextPos);
     }
+
+    public void CheckConsumable(Vector2Int direction)
+    {
+        var consumable = ConsumablesController.Instance.GetConsumable(segments[0] + direction);
+        if (consumable)
+        {
+            consumable.Activate(this);
+        }
+    }
     
     public void Move(Vector2Int direction)
     {
@@ -35,6 +44,11 @@ public abstract class Snake : MonoBehaviour
         UpdateSprites(direction);
     }
 
+
+    public void AddLastSegment()
+    {
+        segments.Add(segments[^1]);
+    }
     
     
     private void UpdateSprites(Vector2Int direction)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class ConsumablesController : MonoBehaviour
 {
@@ -18,8 +19,8 @@ public class ConsumablesController : MonoBehaviour
         public Vector2Int randomSpawnTime;
     }
 
-    private List<Consumable> consumables = new();
-    private Dictionary<Consumable, int> lastSpawnTimes = new();
+    private readonly List<Consumable> consumables = new();
+    private readonly Dictionary<Consumable, int> nextSpawnTimes = new();
     
     private void Awake()
     {
@@ -28,9 +29,26 @@ public class ConsumablesController : MonoBehaviour
 
     public void Tick(int turn)
     {
+        var suitablePositions = GetSuitablePositions();
+        
         foreach (var consumableInfo in consumableInfos)
         {
-            
+            if (suitablePositions.Count == 0) return;
+            if (turn < consumableInfo.startSpawnDelay) return;
+            var nextSpawnTime = nextSpawnTimes.GetValueOrDefault(consumableInfo.consumable,
+                Random.Range(consumableInfo.randomSpawnTime.x, consumableInfo.randomSpawnTime.y + 1));
+            print($"{consumableInfo.consumable} turn {turn} next spawn time {nextSpawnTime}");
+            nextSpawnTimes.TryAdd(consumableInfo.consumable, nextSpawnTime);
+            if (turn >= nextSpawnTime)
+            {
+                var randPos = suitablePositions[Random.Range(0, suitablePositions.Count)];
+                var pos = new Vector3(randPos.x, randPos.y, transform.position.z);
+                var obj = Instantiate(consumableInfo.consumable, pos, Quaternion.identity, transform);
+                consumables.Add(obj);
+                suitablePositions.Remove(randPos);
+                nextSpawnTimes[consumableInfo.consumable] = turn + Random.Range(consumableInfo.randomSpawnTime.x,
+                    consumableInfo.randomSpawnTime.y + 1);
+            }
         }
     }
     
@@ -46,10 +64,24 @@ public class ConsumablesController : MonoBehaviour
                 var pos = new Vector2Int(x, y);
                 if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
                 if (playerSegments.Any(s => s == pos)) continue;
+                if (consumables.Any(c => c.Pos == pos)) continue;
                 suitablePositions.Add(pos);
             }
         }
 
         return suitablePositions;
     }
+
+    public Consumable GetConsumable(Vector2Int pos)
+    {
+        foreach (var consumable in consumables)
+        {
+            if (consumable.transform.position == new Vector3(pos.x, pos.y, consumable.transform.position.z))
+                return consumable;
+        }
+
+        return null;
+    }
+
+    public void RemoveConsumable(Consumable consumable) => consumables.Remove(consumable);
 }

@@ -27,8 +27,11 @@ public class MainProcess : MonoBehaviour
             } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
 
             turn++;
+            
+            Player.Instance.CheckConsumable(direction);
             Player.Instance.Move(direction);
             ConsumablesController.Instance.Tick(turn);
+            
             yield return new WaitForSeconds(0.1f);
         }
     }

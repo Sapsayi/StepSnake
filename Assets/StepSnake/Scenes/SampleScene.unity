@@ -31968,7 +31968,7 @@ MonoBehaviour:
   consumableInfos:
   - consumable: {fileID: 5214792090388594501, guid: 86096ea58d61c114f82599123f4caf3a, type: 3}
     startSpawnDelay: 0
-    randomSpawnTime: {x: 10, y: 20}
+    randomSpawnTime: {x: 1, y: 1}
 --- !u!1 &2132045314
 GameObject:
   m_ObjectHideFlags: 0
