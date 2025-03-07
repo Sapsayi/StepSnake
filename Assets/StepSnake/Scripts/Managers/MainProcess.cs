@@ -37,7 +37,7 @@ public class MainProcess : MonoBehaviour
 
             turn++;
 
-            if (Player.Instance.CheckSelfKill(direction))
+            if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
                 UI.Instance.OpenDeathScene();
                 yield break;
@@ -45,9 +45,14 @@ public class MainProcess : MonoBehaviour
             
             Player.Instance.CheckConsumable(direction);
             Player.Instance.Move(direction);
+            
+            yield return new WaitForSeconds(0.5f);
+            
+            yield return EnemyController.Instance.EnemyTurn();
+            
             ConsumablesController.Instance.Tick(turn);
             
-            yield return new WaitForSeconds(0.1f);
+            EnemyController.Instance.CheckCap(turn);
         }
     }
 

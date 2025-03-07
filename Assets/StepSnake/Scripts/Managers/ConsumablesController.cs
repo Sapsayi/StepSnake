@@ -19,7 +19,7 @@ public class ConsumablesController : MonoBehaviour
         public Vector2Int randomSpawnTime;
     }
 
-    private readonly List<Consumable> consumables = new();
+    public readonly List<Consumable> Consumables = new();
     private readonly Dictionary<Consumable, int> nextSpawnTimes = new();
     
     private void Awake()
@@ -44,7 +44,7 @@ public class ConsumablesController : MonoBehaviour
                 var randPos = suitablePositions[Random.Range(0, suitablePositions.Count)];
                 var pos = new Vector3(randPos.x, randPos.y, transform.position.z);
                 var obj = Instantiate(consumableInfo.consumable, pos, Quaternion.identity, transform);
-                consumables.Add(obj);
+                Consumables.Add(obj);
                 suitablePositions.Remove(randPos);
                 nextSpawnTimes[consumableInfo.consumable] = turn + Random.Range(consumableInfo.randomSpawnTime.x,
                     consumableInfo.randomSpawnTime.y + 1);
@@ -64,7 +64,8 @@ public class ConsumablesController : MonoBehaviour
                 var pos = new Vector2Int(x, y);
                 if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
                 if (playerSegments.Any(s => s == pos)) continue;
-                if (consumables.Any(c => c.Pos == pos)) continue;
+                if (Consumables.Any(c => c.Pos == pos)) continue;
+                if (EnemyController.Instance.Enemies.Any(e => e.GetSegments().Any(s => s == pos))) continue;
                 suitablePositions.Add(pos);
             }
         }
@@ -74,7 +75,7 @@ public class ConsumablesController : MonoBehaviour
 
     public Consumable GetConsumable(Vector2Int pos)
     {
-        foreach (var consumable in consumables)
+        foreach (var consumable in Consumables)
         {
             if (consumable.transform.position == new Vector3(pos.x, pos.y, consumable.transform.position.z))
                 return consumable;
@@ -83,5 +84,5 @@ public class ConsumablesController : MonoBehaviour
         return null;
     }
 
-    public void RemoveConsumable(Consumable consumable) => consumables.Remove(consumable);
+    public void RemoveConsumable(Consumable consumable) => Consumables.Remove(consumable);
 }

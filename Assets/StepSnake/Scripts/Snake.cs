@@ -6,8 +6,8 @@ public abstract class Snake : MonoBehaviour
     [SerializeField] private SpriteRenderer spritePrefab;
     [SerializeField] private Color color;
     [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
-    
-    private readonly List<Vector2Int> segments = new();
+
+    protected readonly List<Vector2Int> segments = new();
     private readonly List<SpriteRenderer> sprites = new();
 
     public void Init(List<Vector2Int> segments)
@@ -30,6 +30,20 @@ public abstract class Snake : MonoBehaviour
         {
             if (segment == segments[0] + direction)
                 return true;
+        }
+
+        return false;
+    }
+
+    public bool CheckEnemies(Vector2Int direction)
+    {
+        foreach (var enemy in EnemyController.Instance.Enemies)
+        {
+            foreach (var enemySegment in enemy.segments)
+            {
+                if (enemySegment == segments[0] + direction)
+                    return true;
+            }
         }
 
         return false;

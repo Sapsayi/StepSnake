@@ -6636,6 +6636,53 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &471114528
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 471114529}
+  - component: {fileID: 471114530}
+  m_Layer: 0
+  m_Name: EnemyController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &471114529
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 471114528}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &471114530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 471114528}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21ea488de9d5f8d43943e04262d623e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  enemyPrefab: {fileID: 1394550552018205896, guid: 77e061444f0829d4e820c2fa5b309732, type: 3}
+  minSpawnDistanceToSnake: 3
+  caps: 000000000000000014000000
 --- !u!1 &475029008
 GameObject:
   m_ObjectHideFlags: 0
@@ -24401,11 +24448,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startPlayerSegments:
-  - {x: 9, y: 11}
-  - {x: 9, y: 10}
   - {x: 9, y: 9}
-  - {x: 9, y: 8}
-  - {x: 9, y: 7}
 --- !u!4 &1477436148
 Transform:
   m_ObjectHideFlags: 0
@@ -32512,7 +32555,7 @@ MonoBehaviour:
   consumableInfos:
   - consumable: {fileID: 5214792090388594501, guid: 86096ea58d61c114f82599123f4caf3a, type: 3}
     startSpawnDelay: 0
-    randomSpawnTime: {x: 1, y: 1}
+    randomSpawnTime: {x: 10, y: 20}
 --- !u!1 &2132045314
 GameObject:
   m_ObjectHideFlags: 0
@@ -32871,5 +32914,6 @@ SceneRoots:
   - {fileID: 1477436148}
   - {fileID: 2130241654}
   - {fileID: 728587765}
+  - {fileID: 471114529}
   - {fileID: 638176785}
   - {fileID: 120983369}
