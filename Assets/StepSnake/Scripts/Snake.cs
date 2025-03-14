@@ -1,19 +1,33 @@
+using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public abstract class Snake : MonoBehaviour
 {
-    [SerializeField] private SpriteRenderer spritePrefab;
+    [SerializeField] private SnakeBaseSegment baseSegmentPrefab;
+    [SerializeField] private GameObject eyesPrefab;
+    [SerializeField] private GameObject tailPrefab;
     [SerializeField] private Color color;
-    [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
-
+    [SerializeField] private SnakeSegmentsConfig config;
+    
     protected readonly List<Vector2Int> segments = new();
-    private readonly List<SpriteRenderer> sprites = new();
+    private readonly List<SnakeBaseSegment> sprites = new();
+    private Transform eyes;
+    private Transform tail;
+    private Vector2Int previousTailPos;
 
     public void Init(List<Vector2Int> segments)
     {
         this.segments.AddRange(segments);
-        UpdateSprites(new Vector2Int(0, 1));
+        previousTailPos = this.segments[^1];
+        eyes = Instantiate(eyesPrefab, transform).transform;
+        tail = Instantiate(tailPrefab, transform).transform;
+        eyes.transform.position = new Vector3(this.segments[0].x, this.segments[0].y, transform.position.z - 1);
+        tail.transform.position = new Vector3(this.segments[0].x, this.segments[0].y, transform.position.z - 1);
+        
+        UpdateSprites(new Vector2Int(0, 0));
     }
 
     public bool CanMove(Vector2Int direction)
@@ -53,13 +67,12 @@ public abstract class Snake : MonoBehaviour
     {
         var consumable = ConsumablesController.Instance.GetConsumable(segments[0] + direction);
         if (consumable)
-        {
             consumable.Activate(this);
-        }
     }
     
     public void Move(Vector2Int direction)
     {
+        previousTailPos = segments[^1];
         for (int i = segments.Count - 1; i >= 1; i--)
         {
             segments[i] = segments[i - 1];
@@ -77,69 +90,79 @@ public abstract class Snake : MonoBehaviour
     
     private void UpdateSprites(Vector2Int direction)
     {
+        UpdateEyes(direction);
+
+        if (direction != Vector2Int.zero && segments[^1] != previousTailPos)
+        {
+            DrawTail(direction);
+        }
+
         for (int i = 0; i < segments.Count; i++)
         {
-            if (sprites.Count == i)
-                sprites.Add(Instantiate(spritePrefab, transform));
+            if (sprites.Count == i) 
+                sprites.Add(Instantiate(baseSegmentPrefab, transform));
             sprites[i].transform.position = new Vector3(segments[i].x, segments[i].y, transform.position.z);
         }
         
         ApplyColor();
-        DrawHead(direction);
-        for (int i = 0; i < sprites.Count; i++)
-        {
-            if (i != 0 && i != sprites.Count - 1)
-                DrawBody(i);
-        }
-        DrawTail();
+        SetSegmentsRotation(direction);
+        if (direction != Vector2Int.zero)
+            sprites[0].StartHeadMoveAnimation();
     }
 
+    private void UpdateEyes(Vector2Int direction)
+    {
+        eyes.eulerAngles = GetRotation(direction);
+        var newPos = new Vector3(eyes.position.x + direction.x, eyes.position.y + direction.y, transform.position.z - 1);
+        eyes.DOMove(newPos, config.moveAnimDuration).SetEase(Ease.OutBack);
+    }
+
+    private void DrawTail(Vector2Int direction)
+    {
+        var tempTail = Instantiate(baseSegmentPrefab, transform);
+        tempTail.SetColor(color);
+        tempTail.transform.position = sprites[^1].transform.position;
+        var tailDirection = direction;
+        if (segments.Count > 1)
+            tailDirection = segments[^1] - previousTailPos;
+        tempTail.transform.eulerAngles = GetRotation(tailDirection);
+        tempTail.StartTailMoveAnimation();
+
+        tail.eulerAngles = GetRotation(tailDirection);
+        var newPos = new Vector3(segments[^1].x, segments[^1].y, transform.position.z - 1);
+        tail.DOMove(newPos, config.moveAnimDuration).SetEase(Ease.OutQuart);
+    }
+    
     private void ApplyColor()
     {
         foreach (var sprite in sprites)
         {
-            sprite.color = color;
+            sprite.SetColor(color);
+        }
+    }
+
+    private void SetSegmentsRotation(Vector2Int direction)
+    {
+        sprites[0].transform.eulerAngles = GetRotation(direction);
+        sprites[0].SetBodiesRotation(GetRotation(direction * -1), GetRotation(direction));
+        for (int i = 1; i < sprites.Count; i++)
+        {
+            var previousSegmentDirection = segments[i - 1] - segments[i];
+            if (i < sprites.Count - 1)
+            {
+                var nextSegmentDirection = segments[i + 1] - segments[i];
+                sprites[i].SetBodiesRotation(GetRotation(previousSegmentDirection), GetRotation(nextSegmentDirection));
+            }
+            else if (i == sprites.Count - 1)
+            {
+                var previousTailDirection = previousTailPos - segments[i];
+                sprites[i].SetBodiesRotation(GetRotation(previousSegmentDirection),
+                    GetRotation(segments[^1] == previousTailPos ? previousSegmentDirection : previousTailDirection));
+            }
         }
     }
     
-    private void DrawHead(Vector2Int direction)
-    {
-        sprites[0].sprite = sprites.Count == 1 ? snakeSegmentsConfig.singleHead : snakeSegmentsConfig.headWithBody;
-        sprites[0].transform.eulerAngles = GetRotation(direction);
-    }
-
-    private void DrawBody(int index)
-    {
-        var direction1 = segments[index - 1] - segments[index];
-        var direction2 = segments[index + 1] - segments[index];
-        if (direction1.x == direction2.x)
-        {
-            sprites[index].sprite = snakeSegmentsConfig.straightBody;
-            sprites[index].transform.eulerAngles = new Vector3(0, 0, 0);
-        }
-        else if (direction1.y == direction2.y)
-        {
-            sprites[index].sprite = snakeSegmentsConfig.straightBody;
-            sprites[index].transform.eulerAngles = new Vector3(0, 0, 90);
-        }
-        else
-        {
-            sprites[index].sprite = direction2 == new Vector2Int(direction1.y, -direction1.x)
-                ? snakeSegmentsConfig.turnedRightBody
-                : snakeSegmentsConfig.turnedLeftBody;
-            sprites[index].transform.eulerAngles = GetRotation(direction1);
-        }
-    }
-
-    private void DrawTail()
-    {
-        if (sprites.Count == 1)
-            return;
-        int lastIndex = sprites.Count - 1;
-        sprites[lastIndex].sprite = snakeSegmentsConfig.tail;
-        var direction = segments[lastIndex - 1] - segments[lastIndex];
-        sprites[lastIndex].transform.eulerAngles = GetRotation(direction);
-    }
+    
     
     private Vector3 GetRotation(Vector2Int direction)
     {

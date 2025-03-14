@@ -12,9 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bf921d95d0bb664d91a8be5de4a72ae, type: 3}
   m_Name: SnakeSegmentsConfig
   m_EditorClassIdentifier: 
-  headWithBody: {fileID: 21300000, guid: 0986b5079c4b3644a81682d622022b45, type: 3}
-  singleHead: {fileID: 21300000, guid: b3213408851ad4e4e901f7c4980410f7, type: 3}
-  straightBody: {fileID: 21300000, guid: 859560f737931c643a5bff7f54f7cff1, type: 3}
-  tail: {fileID: 21300000, guid: 11270689098a8c74eab8d7a64bd89590, type: 3}
-  turnedLeftBody: {fileID: 21300000, guid: 2fc321f3df5febb4db465ca3851e0815, type: 3}
-  turnedRightBody: {fileID: 21300000, guid: 307db2a732b2c14428689fcd9c3fb0b1, type: 3}
+  moveAnimDuration: 0.2

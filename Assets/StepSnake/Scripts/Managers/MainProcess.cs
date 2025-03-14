@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 
 public class MainProcess : MonoBehaviour
 {
+    [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
     [SerializeField] private List<Vector2Int> startPlayerSegments;
 
     private int turn;
@@ -46,9 +47,11 @@ public class MainProcess : MonoBehaviour
             Player.Instance.CheckConsumable(direction);
             Player.Instance.Move(direction);
             
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(snakeSegmentsConfig.moveAnimDuration);
             
             yield return EnemyController.Instance.EnemyTurn();
+            
+            yield return new WaitForSeconds(snakeSegmentsConfig.moveAnimDuration);
             
             ConsumablesController.Instance.Tick(turn);
             
