@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
@@ -70,7 +71,7 @@ public abstract class Snake : MonoBehaviour
             consumable.Activate(this);
     }
     
-    public void Move(Vector2Int direction)
+    public IEnumerator Move(Vector2Int direction)
     {
         previousTailPos = segments[^1];
         for (int i = segments.Count - 1; i >= 1; i--)
@@ -79,6 +80,7 @@ public abstract class Snake : MonoBehaviour
         }
         segments[0] += direction;
         UpdateSprites(direction);
+        yield return new WaitForSeconds(config.moveAnimDuration);
     }
 
 
@@ -145,6 +147,7 @@ public abstract class Snake : MonoBehaviour
     {
         sprites[0].transform.eulerAngles = GetRotation(direction);
         sprites[0].SetBodiesRotation(GetRotation(direction * -1), GetRotation(direction));
+        
         for (int i = 1; i < sprites.Count; i++)
         {
             var previousSegmentDirection = segments[i - 1] - segments[i];
@@ -161,7 +164,43 @@ public abstract class Snake : MonoBehaviour
             }
         }
     }
-    
+
+
+    public IEnumerator DeathRoutine(Vector2Int direction)
+    {
+        sprites[0].transform.eulerAngles = GetRotation(direction);
+        
+        if (segments.Count > 1)
+        {
+            var nextSegmentDirection = segments[1] - segments[0];
+            sprites[0].SetBodiesRotation(GetRotation(direction), GetRotation(nextSegmentDirection));
+        }
+        else
+        {
+            sprites[0].SetBodiesRotation(GetRotation(direction * -1), GetRotation(direction));
+            tail.eulerAngles = GetRotation(direction);
+        }
+
+        eyes.eulerAngles = GetRotation(direction);
+        
+        var eyesSeq = DOTween.Sequence();
+        var oldEyesPos = eyes.position;
+        var newEyesPos = new Vector3(eyes.position.x + direction.x * 0.2f, eyes.position.y + direction.y * 0.2f, eyes.position.z);
+        eyesSeq.Append(eyes.DOMove(newEyesPos, config.moveAnimDuration / 2).SetEase(Ease.OutQuad));
+        eyesSeq.Append(eyes.DOMove(oldEyesPos, config.moveAnimDuration / 2).SetEase(Ease.OutQuad));
+        
+        yield return new WaitForSeconds(0.5f);
+        for (int i = 0; i < sprites.Count; i++)
+        {
+            sprites[i].transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
+            if (i == 0)
+                eyes.transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
+            if (i == sprites.Count - 1)
+                tail.transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
+            yield return new WaitForSeconds(0.1f);
+        }
+        yield return new WaitForSeconds(0.2f);
+    }
     
     
     private Vector3 GetRotation(Vector2Int direction)

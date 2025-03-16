@@ -40,18 +40,15 @@ public class MainProcess : MonoBehaviour
 
             if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
+                yield return Player.Instance.DeathRoutine(direction);
                 UI.Instance.OpenDeathScene();
                 yield break;
             }
             
             Player.Instance.CheckConsumable(direction);
-            Player.Instance.Move(direction);
-            
-            yield return new WaitForSeconds(snakeSegmentsConfig.moveAnimDuration);
+            yield return Player.Instance.Move(direction);
             
             yield return EnemyController.Instance.EnemyTurn();
-            
-            yield return new WaitForSeconds(snakeSegmentsConfig.moveAnimDuration);
             
             ConsumablesController.Instance.Tick(turn);
             

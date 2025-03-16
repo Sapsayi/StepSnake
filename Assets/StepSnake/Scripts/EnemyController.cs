@@ -41,52 +41,6 @@ public class EnemyController : MonoBehaviour
             }
         }
     }
-
-    public IEnumerator EnemyTurn()
-    {
-        foreach (var enemy in Enemies.ToList())
-        {
-            var directions = new List<Vector2Int> { new(0, 1), new(1, 0), new(0, -1), new(-1, 0) };
-            foreach (var direction in directions.ToList())
-            {
-                if (!enemy.CanMove(direction))
-                    directions.Remove(direction);
-            }
-
-            var randDirection = directions[Random.Range(0, directions.Count)];
-            
-            foreach (var direction in directions.ToList())
-            {
-                if (enemy.CheckSelfKill(direction))
-                    directions.Remove(direction);
-            }
-            
-            if (directions.Count > 0)
-                randDirection = directions[Random.Range(0, directions.Count)];
-            
-            foreach (var direction in directions.ToList())
-            {
-                if (enemy.CheckEnemies(direction))
-                    directions.Remove(direction);
-            }
-            
-            if (directions.Count > 0)
-                randDirection = directions[Random.Range(0, directions.Count)];
-
-            if (enemy.CheckPlayerSegments(randDirection))
-            {
-                Enemies.Remove(enemy);
-                Destroy(enemy.gameObject);
-            }
-            else
-            {
-                enemy.CheckConsumable(randDirection);
-                enemy.Move(randDirection);
-            }
-        }
-
-        yield return null;
-    }
     
     private List<Vector2Int> GetSuitableSpawnPositions()
     {
@@ -107,5 +61,56 @@ public class EnemyController : MonoBehaviour
         }
 
         return suitablePositions;
+    }
+
+    public IEnumerator EnemyTurn()
+    {
+        foreach (var enemy in Enemies.ToList())
+        {
+            var directions = GetSuitableDirection(enemy);
+            var randDirection = directions[Random.Range(0, directions.Count)];
+            
+            foreach (var direction in directions.ToList())
+            {
+                if (enemy.CheckSelfKill(direction))
+                    directions.Remove(direction);
+            }
+            if (directions.Count > 0)
+                randDirection = directions[Random.Range(0, directions.Count)];
+            
+            foreach (var direction in directions.ToList())
+            {
+                if (enemy.CheckEnemies(direction))
+                    directions.Remove(direction);
+            }
+            if (directions.Count > 0)
+                randDirection = directions[Random.Range(0, directions.Count)];
+
+            if (enemy.CheckPlayerSegments(randDirection))
+            {
+                yield return enemy.DeathRoutine(randDirection);
+                Enemies.Remove(enemy);
+                Destroy(enemy.gameObject);
+            }
+            else
+            {
+                enemy.CheckConsumable(randDirection);
+                yield return enemy.Move(randDirection);
+            }
+        }
+
+        yield return null;
+    }
+
+    private List<Vector2Int> GetSuitableDirection(Enemy enemy)
+    {
+        var directions = new List<Vector2Int> { new(0, 1), new(1, 0), new(0, -1), new(-1, 0) };
+        foreach (var direction in directions.ToList())
+        {
+            if (!enemy.CanMove(direction))
+                directions.Remove(direction);
+        }
+
+        return directions;
     }
 }
