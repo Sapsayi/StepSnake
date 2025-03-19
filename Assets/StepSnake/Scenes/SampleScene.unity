@@ -7552,7 +7552,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 1394550552018205896, guid: 77e061444f0829d4e820c2fa5b309732, type: 3}
   minSpawnDistanceToSnake: 3
-  caps: 000000000000000014000000
+  caps: 0000000000000000
 --- !u!1 &474510849
 GameObject:
   m_ObjectHideFlags: 0
@@ -22406,6 +22406,10 @@ MonoBehaviour:
   snakeSegmentsConfig: {fileID: 11400000, guid: 5c46af53be6ff7f4cbc450a596485d1e, type: 2}
   startPlayerSegments:
   - {x: 9, y: 9}
+  startEnemiesPositions:
+  - {x: 14, y: 14}
+  - {x: 4, y: 14}
+  - {x: 9, y: 3}
 --- !u!4 &1477436148
 Transform:
   m_ObjectHideFlags: 0

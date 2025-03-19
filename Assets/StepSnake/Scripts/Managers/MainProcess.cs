@@ -3,17 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class MainProcess : MonoBehaviour
 {
     [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
     [SerializeField] private List<Vector2Int> startPlayerSegments;
+    [SerializeField] private List<Vector2Int> startEnemiesPositions;
 
     private int turn;
     
     private void Start()
     {
         Player.Instance.Init(startPlayerSegments);
+        foreach (var pos in startEnemiesPositions)
+        {
+            EnemyController.Instance.SpawnEnemy(pos);
+        }
         StartCoroutine(ProcessRoutine());
     }
 
@@ -52,7 +58,7 @@ public class MainProcess : MonoBehaviour
             
             ConsumablesController.Instance.Tick(turn);
             
-            EnemyController.Instance.CheckCap(turn);
+            //EnemyController.Instance.CheckCap(turn);
         }
     }
 
