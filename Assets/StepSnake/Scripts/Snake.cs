@@ -192,12 +192,13 @@ public abstract class Snake : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         for (int i = 0; i < sprites.Count; i++)
         {
-            sprites[i].transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
+            float animDuration = config.GetOneSegmentDeathDuration(i);
+            sprites[i].transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
             if (i == 0)
-                eyes.transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
+                eyes.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
             if (i == sprites.Count - 1)
-                tail.transform.DOScale(0, 0.3f).SetEase(Ease.OutQuart);
-            yield return new WaitForSeconds(0.1f);
+                tail.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
+            yield return new WaitForSeconds(animDuration / 3);
         }
         yield return new WaitForSeconds(0.2f);
     }

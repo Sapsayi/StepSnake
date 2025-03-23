@@ -4,4 +4,19 @@ using UnityEngine;
 public class SnakeSegmentsConfig : ScriptableObject
 {
     public float moveAnimDuration;
+
+    public float baseDeathDuration;
+    public float deathDurationMultiplier;
+    public float minDeathDuration;
+
+    public float GetOneSegmentDeathDuration(int pos)
+    {
+        float duration = baseDeathDuration;
+        for (int i = 0; i < pos; i++)
+        {
+            duration *= deathDurationMultiplier;
+        }
+
+        return Mathf.Max(minDeathDuration, duration);
+    }
 }

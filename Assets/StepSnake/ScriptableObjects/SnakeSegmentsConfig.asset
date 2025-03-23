@@ -13,3 +13,6 @@ MonoBehaviour:
   m_Name: SnakeSegmentsConfig
   m_EditorClassIdentifier: 
   moveAnimDuration: 0.2
+  baseDeathDuration: 0.3
+  deathDurationMultiplier: 0.95
+  minDeathDuration: 0.1
