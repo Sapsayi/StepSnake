@@ -166,7 +166,7 @@ public abstract class Snake : MonoBehaviour
     }
 
 
-    public IEnumerator DeathRoutine(Vector2Int direction)
+    public IEnumerator DeathRoutine(Vector2Int direction, bool destroyOnEnd = false)
     {
         sprites[0].transform.eulerAngles = GetRotation(direction);
         
@@ -201,6 +201,20 @@ public abstract class Snake : MonoBehaviour
             yield return new WaitForSeconds(animDuration / 3);
         }
         yield return new WaitForSeconds(0.2f);
+        if (destroyOnEnd)
+            Destroy(gameObject);
+    }
+
+    public float GetDeathRoutineDuration()
+    {
+        float duration = 0.7f;
+        for (int i = 0; i < sprites.Count; i++)
+        {
+            float animDuration = config.GetOneSegmentDeathDuration(i);
+            duration += animDuration / 3;
+        }
+
+        return duration;
     }
     
     

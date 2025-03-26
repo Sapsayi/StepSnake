@@ -16,10 +16,11 @@ public class MainProcess : MonoBehaviour
     private void Start()
     {
         Player.Instance.Init(startPlayerSegments);
-        foreach (var pos in startEnemiesPositions)
+        for (var i = 0; i < startEnemiesPositions.Count; i++)
         {
-            EnemyController.Instance.SpawnEnemy(pos);
+            EnemyController.Instance.SpawnEnemy(startEnemiesPositions[i], "enemy" + i);
         }
+
         StartCoroutine(ProcessRoutine());
     }
 

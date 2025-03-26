@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -8,16 +9,17 @@ public static class Pathfinding
     {
         public bool walkable;
         public Vector2Int pos;
-        public int gCost; // Стоимость пути от начальной точки до этой клетки
-        public int hCost; // Эвристическая оценка (расстояние до цели)
+        public int gCost; // Cost from the start to this node
+        public int hCost; // Heuristic cost (distance to target)
         public Node parent;
 
-        public int fCost => gCost + hCost; // сумарная оценка
+        public int fCost => gCost + hCost; // Total cost
 
         public Node(bool walkable, Vector2Int pos)
         {
             this.walkable = walkable;
             this.pos = pos;
+            gCost = int.MaxValue;
         }
     }
 
@@ -28,11 +30,37 @@ public static class Pathfinding
         grid = GetGrid(startPos, targetPos);
         var startNode = grid[startPos.x, startPos.y];
         var targetNode = grid[targetPos.x, targetPos.y];
+        
+        startNode.gCost = 0;
 
+        if (AStarSearch(startNode, targetNode))
+        {
+            Node firstStep = RetracePath(startNode, targetNode);
+            return firstStep.pos - startNode.pos;
+        }
+
+        return Vector2Int.zero;
+    }
+    
+    public static int GetDistance(Vector2Int startPos, Vector2Int targetPos)
+    {
+        grid = GetGrid(startPos, targetPos);
+        var startNode = grid[startPos.x, startPos.y];
+        var targetNode = grid[targetPos.x, targetPos.y];
+        
+        startNode.gCost = 0;
+
+        if (AStarSearch(startNode, targetNode))
+            return GetPathDistance(startNode, targetNode);
+
+        return int.MaxValue;
+    }
+    
+    private static bool AStarSearch(Node startNode, Node targetNode)
+    {
         List<Node> openSet = new();
         HashSet<Node> closedSet = new();
 
-        startNode.gCost = 0;
         openSet.Add(startNode);
 
         while (openSet.Count > 0)
@@ -51,9 +79,7 @@ public static class Pathfinding
             closedSet.Add(curNode);
 
             if (curNode == targetNode)
-            {
-                return RetracePath(startNode, targetNode).pos - startNode.pos;
-            }
+                return true;
 
             foreach (var neighbour in GetNeighbours(curNode))
             {
@@ -74,7 +100,7 @@ public static class Pathfinding
             }
         }
 
-        return Vector2Int.zero;
+        return false;
     }
 
     private static Node[,] GetGrid(Vector2Int startPos, Vector2Int targetPos)
@@ -106,13 +132,20 @@ public static class Pathfinding
     private static List<Node> GetNeighbours(Node node)
     {
         List<Node> neighbours = new();
-        Vector2Int[] direction = new Vector2Int[] { new(1, 0), new(0, 1), new(0, -1), new(-1, 0) };
-
-        for (int i = 0; i < direction.Length; i++)
+        Vector2Int[] directions = { new(1, 0), new(0, 1), new(0, -1), new(-1, 0) };
+        
+        // Shuffle the directions array using Fisher-Yates algorithm.
+        for (int i = directions.Length - 1; i > 0; i--)
         {
-            if (GridManager.Instance.CheckBorders(node.pos + direction[i]))
+            int randomIndex = UnityEngine.Random.Range(0, i + 1);
+            (directions[i], directions[randomIndex]) = (directions[randomIndex], directions[i]);
+        }
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            if (GridManager.Instance.CheckBorders(node.pos + directions[i]))
             {
-                neighbours.Add(grid[node.pos.x + direction[i].x, node.pos.y + direction[i].y]);
+                neighbours.Add(grid[node.pos.x + directions[i].x, node.pos.y + directions[i].y]);
             }
         }
 
@@ -130,12 +163,20 @@ public static class Pathfinding
         }
 
         path.Reverse();
-
-        foreach (var node in path)
-        {
-            Debug.Log(node.pos);
-        }
         
         return path[0];
+    }
+    
+    private static int GetPathDistance(Node startNode, Node endNode)
+    {
+        Node curNode = endNode;
+        int distance = 0;
+        while (curNode != startNode)
+        {
+            curNode = curNode.parent;
+            distance++;
+        }
+        
+        return distance;
     }
 }

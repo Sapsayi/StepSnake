@@ -30,20 +30,21 @@ public class ConsumablesController : MonoBehaviour
     public void Tick(int turn)
     {
         var suitablePositions = GetSuitablePositions();
-        
-        foreach (var consumableInfo in consumableInfos)
+
+        for (var i = 0; i < consumableInfos.Length; i++)
         {
+            var consumableInfo = consumableInfos[i];
             if (suitablePositions.Count == 0) return;
             if (turn < consumableInfo.startSpawnDelay) return;
             var nextSpawnTime = nextSpawnTimes.GetValueOrDefault(consumableInfo.consumable,
                 Random.Range(consumableInfo.randomSpawnTime.x, consumableInfo.randomSpawnTime.y + 1));
-            print($"{consumableInfo.consumable} turn {turn} next spawn time {nextSpawnTime}");
             nextSpawnTimes.TryAdd(consumableInfo.consumable, nextSpawnTime);
             if (turn >= nextSpawnTime)
             {
                 var randPos = suitablePositions[Random.Range(0, suitablePositions.Count)];
                 var pos = new Vector3(randPos.x, randPos.y, transform.position.z);
                 var obj = Instantiate(consumableInfo.consumable, pos, Quaternion.identity, transform);
+                obj.name = "consumable" + i;
                 Consumables.Add(obj);
                 suitablePositions.Remove(randPos);
                 nextSpawnTimes[consumableInfo.consumable] = turn + Random.Range(consumableInfo.randomSpawnTime.x,
@@ -51,7 +52,7 @@ public class ConsumablesController : MonoBehaviour
             }
         }
     }
-    
+    // todo optimize, random first, then check
     private List<Vector2Int> GetSuitablePositions()
     {
         var suitablePositions = new List<Vector2Int>();
@@ -62,10 +63,11 @@ public class ConsumablesController : MonoBehaviour
             for (int y = 0; y < GridManager.Instance.GridSize.y; y++)
             {
                 var pos = new Vector2Int(x, y);
-                if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
-                if (playerSegments.Any(s => s == pos)) continue;
                 if (Consumables.Any(c => c.Pos == pos)) continue;
+                if (playerSegments.Any(s => s == pos)) continue;
+                if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
                 if (EnemyController.Instance.Enemies.Any(e => e.GetSegments().Any(s => s == pos))) continue;
+                if (EnemyController.Instance.Enemies.Any(e => Vector2Int.Distance(pos, e.GetSegments()[0]) < minDistanceToSnake)) continue;
                 suitablePositions.Add(pos);
             }
         }

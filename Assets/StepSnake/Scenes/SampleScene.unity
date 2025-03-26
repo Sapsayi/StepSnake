@@ -7552,6 +7552,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enemyPrefab: {fileID: 1394550552018205896, guid: 77e061444f0829d4e820c2fa5b309732, type: 3}
   minSpawnDistanceToSnake: 3
+  config: {fileID: 11400000, guid: 5c46af53be6ff7f4cbc450a596485d1e, type: 2}
   caps: 0000000000000000
 --- !u!1 &474510849
 GameObject:

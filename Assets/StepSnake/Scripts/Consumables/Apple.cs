@@ -7,6 +7,5 @@ public class Apple : Consumable
         Destroy(gameObject);
         snake.AddLastSegment();
         ConsumablesController.Instance.RemoveConsumable(this);
-        print("activate");
     }
 }

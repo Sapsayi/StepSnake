@@ -11,10 +11,13 @@ public class EnemyController : MonoBehaviour
     
     [SerializeField] private Enemy enemyPrefab;
     [SerializeField] private float minSpawnDistanceToSnake;
+    [SerializeField] private SnakeSegmentsConfig config;
     [SerializeField] private int[] caps;
 
     public readonly List<Enemy> Enemies = new();
 
+    private Dictionary<Enemy, Consumable> assignedConsumables = new();
+    
     private void Awake()
     {
         Instance = this;
@@ -42,9 +45,10 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    public void SpawnEnemy(Vector2Int pos)
+    public void SpawnEnemy(Vector2Int pos, string enemyName)
     {
         var enemy = Instantiate(enemyPrefab, transform);
+        enemy.name = enemyName;
         enemy.Init(new List<Vector2Int> { pos });
         Enemies.Add(enemy);
     }
@@ -72,37 +76,135 @@ public class EnemyController : MonoBehaviour
 
     public IEnumerator EnemyTurn()
     {
-        List<Consumable> selectedConsumables = new();
+        float duration = config.moveAnimDuration;
+        
+        assignedConsumables.Clear();
         
         foreach (var enemy in Enemies.ToList())
         {
-            var direction = GetRandDirection(enemy);
+            var direction = Vector2Int.zero;
+
+            Consumable assignedConsumable = GetAssignedConsumable(GetConsumableDistancesForOne(enemy), enemy);
             
-            var suitableConsumables = ConsumablesController.Instance.Consumables.Except(selectedConsumables).ToList();
-            if (suitableConsumables.Count > 0)
+            assignedConsumables.Add(enemy, assignedConsumable);
+            
+            if (assignedConsumable)
             {
-                var consumable = suitableConsumables
-                    .OrderBy(c => Vector2Int.Distance(c.Pos, enemy.GetSegments()[0])).ToList()[0];
-                selectedConsumables.Add(consumable);
-                var directionToConsumable = Pathfinding.GetDirection(enemy.GetSegments()[0], consumable.Pos);
-                if (directionToConsumable != Vector2Int.zero)
-                    direction = directionToConsumable;
+                direction = Pathfinding.GetDirection(enemy.GetSegments()[0], assignedConsumable.Pos);
             }
+            
+            if (direction == Vector2Int.zero)
+                direction = GetRandDirection(enemy);
 
             if (enemy.CheckSelfKill(direction) || enemy.CheckEnemies(direction) || enemy.CheckPlayerSegments(direction))
             {
-                yield return enemy.DeathRoutine(direction);
+                float deathDuration = enemy.GetDeathRoutineDuration();
+                if (duration < deathDuration)
+                    duration = deathDuration;
+                
+                StartCoroutine(enemy.DeathRoutine(direction, true));
                 Enemies.Remove(enemy);
-                Destroy(enemy.gameObject);
             }
             else
             {
                 enemy.CheckConsumable(direction);
-                yield return enemy.Move(direction);
+                StartCoroutine(enemy.Move(direction));
             }
         }
 
-        yield return null;
+        yield return new WaitForSeconds(duration);
+    }
+
+    private Dictionary<Consumable, Dictionary<Enemy, int>> GetConsumablesInfo()
+    {
+        Dictionary<Consumable, Dictionary<Enemy, int>> consumableInfo = new();
+        foreach (var consumable in ConsumablesController.Instance.Consumables)
+        {
+            Dictionary<Enemy, int> distances = new();
+            foreach (var enemy in Enemies)
+            {
+                int distance = Pathfinding.GetDistance(consumable.Pos, enemy.GetSegments()[0]);
+                if (distance < int.MaxValue)
+                    distances.Add(enemy, distance);
+            }
+
+            consumableInfo.Add(consumable, distances);
+        }
+
+        return consumableInfo;
+    }
+
+    private Dictionary<Enemy, Consumable> GetAssignedConsumables(Dictionary<Consumable, Dictionary<Enemy, int>> consumablesInfo)
+    {
+        Dictionary<Enemy, Consumable> assignedConsumables = new();
+        Dictionary<Consumable, Dictionary<Enemy, int>> selectedConsumablesInfo = new();
+        foreach (var enemy in Enemies)
+        {
+            int minDistance = int.MaxValue;
+            Consumable minDistanceConsumable = null;
+            foreach (var consumable in consumablesInfo)
+            {
+                if (consumable.Value.ContainsKey(enemy))
+                {
+                    if (consumable.Value[enemy] < minDistance)
+                    {
+                        minDistance = consumable.Value[enemy];
+                        minDistanceConsumable = consumable.Key;
+                    }
+                }
+            }
+
+            assignedConsumables.Add(enemy, minDistanceConsumable);   
+        }
+
+        return assignedConsumables;
+    }
+    
+    private Dictionary<Consumable, int> GetConsumableDistancesForOne(Enemy enemy)
+    {
+        Dictionary<Consumable, int> consumableDistances = new();
+        foreach (var consumable in ConsumablesController.Instance.Consumables)
+        {
+            int distance = Pathfinding.GetDistance(consumable.Pos, enemy.GetSegments()[0]);
+            if (distance < int.MaxValue)
+                consumableDistances.Add(consumable, distance);
+        }
+
+        consumableDistances = consumableDistances.OrderBy(c => c.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+
+        return consumableDistances;
+    }
+
+    private Consumable GetAssignedConsumable(Dictionary<Consumable, int> consumableDistances, Enemy enemy)
+    {
+        if (consumableDistances.Count == 0)
+            return null;
+        
+        foreach (var consumable in consumableDistances)
+        {
+            var nearestEnemy = GetNearestEnemy(consumable.Key, enemy, consumable.Value);
+            print($"{enemy.name} checking {consumable.Key.name} nearest enemy {nearestEnemy.name}");
+            if (enemy == nearestEnemy)
+                return consumable.Key;
+        }
+
+        return consumableDistances.First().Key;
+    }
+
+    private Enemy GetNearestEnemy(Consumable consumable, Enemy exceptEnemy, int exceptEnemyDistance)
+    {
+        Dictionary<Enemy, int> distances = new() { { exceptEnemy, exceptEnemyDistance } };
+
+        foreach (var enemy in Enemies)
+        {
+            if (enemy != exceptEnemy)
+            {
+                int distance = Pathfinding.GetDistance(enemy.GetSegments()[0], consumable.Pos);
+                distances.Add(enemy, distance);
+            }
+        }
+
+        return distances.OrderBy(c => c.Value).First().Key;
     }
 
     private Vector2Int GetRandDirection(Enemy enemy)
@@ -147,5 +249,17 @@ public class EnemyController : MonoBehaviour
         }
 
         return directions;
+    }
+
+    private void OnDrawGizmos()
+    {
+        foreach (var consumable in assignedConsumables)
+        {
+            if (consumable.Value)
+            {
+                var enemyPos = new Vector3(consumable.Key.GetSegments()[0].x, consumable.Key.GetSegments()[0].y, 0f);
+                Gizmos.DrawLine(enemyPos, consumable.Value.transform.position);
+            }
+        }
     }
 }
