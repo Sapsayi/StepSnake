@@ -2,9 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public abstract class Snake : MonoBehaviour
 {
@@ -72,7 +73,7 @@ public abstract class Snake : MonoBehaviour
             consumable.Activate(this);
     }
     
-    public void Move(Vector2Int direction)
+    public async UniTask Move(Vector2Int direction)
     {
         previousTailPos = segments[^1];
         for (int i = segments.Count - 1; i >= 1; i--)
@@ -81,6 +82,7 @@ public abstract class Snake : MonoBehaviour
         }
         segments[0] += direction;
         UpdateSprites(direction);
+        await UniTask.WaitForSeconds(config.moveAnimDuration);
     }
 
 
@@ -181,7 +183,7 @@ public abstract class Snake : MonoBehaviour
     }
     
 
-    public IEnumerator DeathRoutine(Vector2Int direction, bool destroyOnEnd = false)
+    public async UniTask DeathRoutine(Vector2Int direction, bool destroyOnEnd = false)
     {
         sprites[0].transform.eulerAngles = GetRotation(direction);
         
@@ -204,21 +206,18 @@ public abstract class Snake : MonoBehaviour
         eyesSeq.Append(eyes.DOMove(newEyesPos, config.moveAnimDuration / 2).SetEase(Ease.OutQuad));
         eyesSeq.Append(eyes.DOMove(oldEyesPos, config.moveAnimDuration / 2).SetEase(Ease.OutQuad));
         
-        yield return new WaitForSeconds(0.5f);
+        await UniTask.WaitForSeconds(0.5f);
         for (int i = 0; i < sprites.Count; i++)
         {
-            yield return DestroySegmentAnimationRoutine(i);
+            await DestroySegmentAnimationRoutine(i);
         }
-        yield return new WaitForSeconds(0.2f);
+        await UniTask.WaitForSeconds(0.2f);
         if (destroyOnEnd)
             Destroy(gameObject);
     }
 
-    public IEnumerator DamagedRoutine()
+    public async UniTask DamagedRoutine()
     {
-        if (damagedSegmentIndex < 0)
-            yield break;
-        
         Transform tempTail = null;
         if (damagedSegmentIndex != 0)
         {
@@ -234,30 +233,27 @@ public abstract class Snake : MonoBehaviour
         
         for (int i = damagedSegmentIndex; i < sprites.Count; i++)
         {
-            yield return DestroySegmentAnimationRoutine(i);
+            await DestroySegmentAnimationRoutine(i);
         }
         sprites.RemoveRange(damagedSegmentIndex, sprites.Count - damagedSegmentIndex);
-        yield return new WaitForSeconds(config.baseDeathDuration);
+        await UniTask.WaitForSeconds(config.baseDeathDuration);
         
         if (damagedSegmentIndex == 0)
             OnDamageDestroy();
         else
-        {
             tail = tempTail;
-            print("new tail");
-        }
 
         damagedSegmentIndex = -1;
-        
-        print("end damage routine");
     }
 
+    public bool IsDamaged => damagedSegmentIndex >= 0;
+    
     protected virtual void OnDamageDestroy()
     {
         Destroy(gameObject);
     }
 
-    private IEnumerator DestroySegmentAnimationRoutine(int index)
+    private async UniTask DestroySegmentAnimationRoutine(int index)
     {
         float animDuration = config.GetOneSegmentDeathDuration(index);
         
@@ -268,45 +264,9 @@ public abstract class Snake : MonoBehaviour
             eyes.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart).OnComplete(() => Destroy(eyes.gameObject));
 
         if (index == sprites.Count - 1)
-        {
-            print("start tail anim");
-            tail.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart).OnComplete(() =>
-            {
-                Destroy(tail.gameObject);
-                print("destroy tail");
-            });
-        }
+            tail.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart).OnComplete(() => Destroy(tail.gameObject));
 
-        yield return new WaitForSeconds(animDuration / 3);
-    }
-
-    public float GetDeathRoutineDuration()
-    {
-        float duration = 0.7f;
-        for (int i = 0; i < sprites.Count; i++)
-        {
-            float animDuration = config.GetOneSegmentDeathDuration(i);
-            duration += animDuration / 3;
-        }
-        
-        print($"death routine duration {duration}");
-        
-        return duration;
-    }
-
-    public float GetDamagedRoutineDuration()
-    {
-        if (damagedSegmentIndex < 0)
-            return 0f;
-        
-        float duration = config.baseDeathDuration;
-        for (int i = damagedSegmentIndex; i < segments.Count; i++)
-        {
-            float animDuration = config.GetOneSegmentDeathDuration(i);
-            duration += animDuration / 3;
-        }
-        
-        return duration;
+        await UniTask.WaitForSeconds(animDuration / 3);
     }
     
     

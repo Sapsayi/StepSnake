@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
@@ -15,7 +16,7 @@ public class MainProcess : MonoBehaviour
     [SerializeField] private List<Vector2Int> startEnemiesPositions;
 
     private int turn;
-    private IEnumerator mainProcessCoroutine;
+    private CancellationTokenSource mainProcessCancellationToken = new();
     
     private void Awake()
     {
@@ -31,7 +32,7 @@ public class MainProcess : MonoBehaviour
             EnemyController.Instance.SpawnEnemy(startEnemiesPositions[i], "enemy" + i);
         }
 
-        StartCoroutine(mainProcessCoroutine = ProcessRoutine());
+        ProcessTask(mainProcessCancellationToken.Token).Forget();
     }
 
     private void Update()
@@ -42,14 +43,14 @@ public class MainProcess : MonoBehaviour
         }
     }
 
-    private IEnumerator ProcessRoutine()
+    private async UniTask ProcessTask(CancellationToken token)
     {
         while (true)
         {
             Vector2Int direction;
             do
             {
-                yield return null;
+                await UniTask.NextFrame();
                 direction = GetMoveDirection();
             } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
 
@@ -57,15 +58,16 @@ public class MainProcess : MonoBehaviour
 
             if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
-                yield return Player.Instance.DeathRoutine(direction);
+                await Player.Instance.DeathRoutine(direction);
                 OnPlayerDestroy();
+                token.ThrowIfCancellationRequested();
             }
 
-            yield return Player.Instance.PlayerTurn(direction);
-            yield return null;
+            await Player.Instance.PlayerTurn(direction);
+            token.ThrowIfCancellationRequested();
             
-            yield return EnemyController.Instance.EnemyTurn();
-            yield return null;
+            await EnemyController.Instance.EnemyTurn();
+            token.ThrowIfCancellationRequested();
             
             ConsumablesController.Instance.Tick(turn);
             
@@ -75,12 +77,8 @@ public class MainProcess : MonoBehaviour
 
     public void OnPlayerDestroy()
     {
-        if (mainProcessCoroutine != null)
-        {
-            StopCoroutine(mainProcessCoroutine);
-            print("on player destroy");
-            UI.Instance.OpenDeathScene();
-        }
+        mainProcessCancellationToken?.Cancel();
+        UI.Instance.OpenDeathScene();
     }
 
     private Vector2Int GetMoveDirection()

@@ -1,5 +1,8 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class Player : Snake
@@ -13,25 +16,18 @@ public class Player : Snake
 
     protected override Color GetColor() => config.playerColor;
 
-    public IEnumerator PlayerTurn(Vector2Int direction)
+    public async UniTask PlayerTurn(Vector2Int direction)
     {
-        float duration = config.moveAnimDuration;
-        
-        print("check player consumable");
+        List<UniTask> uniTasks = new();
         CheckConsumable(direction);
-        print("move player");
-        Move(direction);
-        print("check enemy damages");
+        uniTasks.Add(Move(direction));
         foreach (var enemy in EnemyController.Instance.Enemies)
         {
-            float damageDuration = enemy.GetDamagedRoutineDuration();
-            StartCoroutine(enemy.DamagedRoutine());
-            if (duration < damageDuration)
-                duration = damageDuration;
+            if (enemy.IsDamaged)
+                uniTasks.Add(enemy.DamagedRoutine()); 
         }
-        
-        print($"player turn duration {duration}");
-        yield return new WaitForSeconds(duration);
+
+        await UniTask.WhenAll(uniTasks);
     }
 
     protected override void OnDamageDestroy()

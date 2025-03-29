@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -74,9 +76,9 @@ public class EnemyController : MonoBehaviour
         return suitablePositions;
     }
 
-    public IEnumerator EnemyTurn()
+    public async UniTask EnemyTurn()
     {
-        float duration = config.moveAnimDuration;
+        List<UniTask> uniTasks = new();
         
         assignedConsumables.Clear();
         
@@ -89,39 +91,27 @@ public class EnemyController : MonoBehaviour
             assignedConsumables.Add(enemy, assignedConsumable);
             
             if (assignedConsumable)
-            {
                 direction = Pathfinding.GetDirection(enemy.GetSegments()[0], assignedConsumable.Pos);
-            }
             
             if (direction == Vector2Int.zero)
                 direction = GetRandDirection(enemy);
 
             if (enemy.CheckSelfKill(direction) || enemy.CheckEnemies(direction) || enemy.CheckPlayerSegments(direction))
             {
-                float deathDuration = enemy.GetDeathRoutineDuration();
-                if (duration < deathDuration)
-                    duration = deathDuration;
-                
-                StartCoroutine(enemy.DeathRoutine(direction, true));
+                uniTasks.Add(enemy.DeathRoutine(direction, true));
                 Enemies.Remove(enemy);
             }
             else
             {
-                print("check enemy consumables");
                 enemy.CheckConsumable(direction);
-                print("move enemy");
-                enemy.Move(direction);
+                uniTasks.Add(enemy.Move(direction));
             }
         }
-        
-        print("check player damage");
-        float damageDuration = Player.Instance.GetDamagedRoutineDuration();
-        StartCoroutine(Player.Instance.DamagedRoutine());
-        if (duration < damageDuration)
-            duration = damageDuration;
 
-        print($"enemy turn duration {duration}");
-        yield return new WaitForSeconds(duration);
+        if (Player.Instance.IsDamaged)
+            uniTasks.Add(Player.Instance.DamagedRoutine());
+        
+        await UniTask.WhenAll(uniTasks);
     }
     
     private Dictionary<Consumable, int> GetConsumableDistancesForOne(Enemy enemy)
