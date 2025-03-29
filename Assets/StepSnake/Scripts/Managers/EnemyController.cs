@@ -107,57 +107,21 @@ public class EnemyController : MonoBehaviour
             }
             else
             {
+                print("check enemy consumables");
                 enemy.CheckConsumable(direction);
-                StartCoroutine(enemy.Move(direction));
+                print("move enemy");
+                enemy.Move(direction);
             }
         }
+        
+        print("check player damage");
+        float damageDuration = Player.Instance.GetDamagedRoutineDuration();
+        StartCoroutine(Player.Instance.DamagedRoutine());
+        if (duration < damageDuration)
+            duration = damageDuration;
 
+        print($"enemy turn duration {duration}");
         yield return new WaitForSeconds(duration);
-    }
-
-    private Dictionary<Consumable, Dictionary<Enemy, int>> GetConsumablesInfo()
-    {
-        Dictionary<Consumable, Dictionary<Enemy, int>> consumableInfo = new();
-        foreach (var consumable in ConsumablesController.Instance.Consumables)
-        {
-            Dictionary<Enemy, int> distances = new();
-            foreach (var enemy in Enemies)
-            {
-                int distance = Pathfinding.GetDistance(consumable.Pos, enemy.GetSegments()[0]);
-                if (distance < int.MaxValue)
-                    distances.Add(enemy, distance);
-            }
-
-            consumableInfo.Add(consumable, distances);
-        }
-
-        return consumableInfo;
-    }
-
-    private Dictionary<Enemy, Consumable> GetAssignedConsumables(Dictionary<Consumable, Dictionary<Enemy, int>> consumablesInfo)
-    {
-        Dictionary<Enemy, Consumable> assignedConsumables = new();
-        Dictionary<Consumable, Dictionary<Enemy, int>> selectedConsumablesInfo = new();
-        foreach (var enemy in Enemies)
-        {
-            int minDistance = int.MaxValue;
-            Consumable minDistanceConsumable = null;
-            foreach (var consumable in consumablesInfo)
-            {
-                if (consumable.Value.ContainsKey(enemy))
-                {
-                    if (consumable.Value[enemy] < minDistance)
-                    {
-                        minDistance = consumable.Value[enemy];
-                        minDistanceConsumable = consumable.Key;
-                    }
-                }
-            }
-
-            assignedConsumables.Add(enemy, minDistanceConsumable);   
-        }
-
-        return assignedConsumables;
     }
     
     private Dictionary<Consumable, int> GetConsumableDistancesForOne(Enemy enemy)
@@ -183,7 +147,6 @@ public class EnemyController : MonoBehaviour
         foreach (var consumable in consumableDistances)
         {
             var nearestEnemy = GetNearestEnemy(consumable.Key, enemy, consumable.Value);
-            print($"{enemy.name} checking {consumable.Key.name} nearest enemy {nearestEnemy.name}");
             if (enemy == nearestEnemy)
                 return consumable.Key;
         }
@@ -197,7 +160,7 @@ public class EnemyController : MonoBehaviour
 
         foreach (var enemy in Enemies)
         {
-            if (enemy != exceptEnemy)
+            if (enemy != exceptEnemy && enemy && enemy.GetSegments().Count > 0)
             {
                 int distance = Pathfinding.GetDistance(enemy.GetSegments()[0], consumable.Pos);
                 distances.Add(enemy, distance);
@@ -255,7 +218,7 @@ public class EnemyController : MonoBehaviour
     {
         foreach (var consumable in assignedConsumables)
         {
-            if (consumable.Value)
+            if (consumable.Value && consumable.Key && consumable.Key.GetSegments().Count > 0)
             {
                 var enemyPos = new Vector3(consumable.Key.GetSegments()[0].x, consumable.Key.GetSegments()[0].y, 0f);
                 Gizmos.DrawLine(enemyPos, consumable.Value.transform.position);

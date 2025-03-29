@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -10,14 +11,14 @@ public abstract class Snake : MonoBehaviour
     [SerializeField] private SnakeBaseSegment baseSegmentPrefab;
     [SerializeField] private GameObject eyesPrefab;
     [SerializeField] private GameObject tailPrefab;
-    [SerializeField] private Color color;
-    [SerializeField] private SnakeSegmentsConfig config;
+    [SerializeField] protected SnakeSegmentsConfig config;
     
     protected readonly List<Vector2Int> segments = new();
     private readonly List<SnakeBaseSegment> sprites = new();
     private Transform eyes;
     private Transform tail;
     private Vector2Int previousTailPos;
+    private int damagedSegmentIndex = -1;
 
     public void Init(List<Vector2Int> segments)
     {
@@ -71,7 +72,7 @@ public abstract class Snake : MonoBehaviour
             consumable.Activate(this);
     }
     
-    public IEnumerator Move(Vector2Int direction)
+    public void Move(Vector2Int direction)
     {
         previousTailPos = segments[^1];
         for (int i = segments.Count - 1; i >= 1; i--)
@@ -80,7 +81,6 @@ public abstract class Snake : MonoBehaviour
         }
         segments[0] += direction;
         UpdateSprites(direction);
-        yield return new WaitForSeconds(config.moveAnimDuration);
     }
 
 
@@ -122,7 +122,7 @@ public abstract class Snake : MonoBehaviour
     private void DrawTail(Vector2Int direction)
     {
         var tempTail = Instantiate(baseSegmentPrefab, transform);
-        tempTail.SetColor(color);
+        tempTail.SetColor(GetColor());
         tempTail.transform.position = sprites[^1].transform.position;
         var tailDirection = direction;
         if (segments.Count > 1)
@@ -139,9 +139,11 @@ public abstract class Snake : MonoBehaviour
     {
         foreach (var sprite in sprites)
         {
-            sprite.SetColor(color);
+            sprite.SetColor(GetColor());
         }
     }
+
+    protected abstract Color GetColor();
 
     private void SetSegmentsRotation(Vector2Int direction)
     {
@@ -165,6 +167,19 @@ public abstract class Snake : MonoBehaviour
         }
     }
 
+
+    public void TryDamagePositions(List<Vector2Int> damagedPositions)
+    {
+        for (int i = 0; i < segments.Count; i++)
+        {
+            if (damagedPositions.Any(p => p == segments[i]))
+            {
+                damagedSegmentIndex = i;
+                break;
+            }
+        }
+    }
+    
 
     public IEnumerator DeathRoutine(Vector2Int direction, bool destroyOnEnd = false)
     {
@@ -192,17 +207,77 @@ public abstract class Snake : MonoBehaviour
         yield return new WaitForSeconds(0.5f);
         for (int i = 0; i < sprites.Count; i++)
         {
-            float animDuration = config.GetOneSegmentDeathDuration(i);
-            sprites[i].transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
-            if (i == 0)
-                eyes.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
-            if (i == sprites.Count - 1)
-                tail.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart);
-            yield return new WaitForSeconds(animDuration / 3);
+            yield return DestroySegmentAnimationRoutine(i);
         }
         yield return new WaitForSeconds(0.2f);
         if (destroyOnEnd)
             Destroy(gameObject);
+    }
+
+    public IEnumerator DamagedRoutine()
+    {
+        if (damagedSegmentIndex < 0)
+            yield break;
+        
+        Transform tempTail = null;
+        if (damagedSegmentIndex != 0)
+        {
+            tempTail = Instantiate(tailPrefab, transform).transform;
+            tempTail.name = "temp tail";
+            tempTail.transform.position = new Vector3(segments[damagedSegmentIndex - 1].x,
+                segments[damagedSegmentIndex - 1].y, transform.position.z - 1);
+            tempTail.transform.eulerAngles =
+                GetRotation(segments[damagedSegmentIndex - 1] - segments[damagedSegmentIndex]);
+        }
+        
+        segments.RemoveRange(damagedSegmentIndex, segments.Count - damagedSegmentIndex);
+        
+        for (int i = damagedSegmentIndex; i < sprites.Count; i++)
+        {
+            yield return DestroySegmentAnimationRoutine(i);
+        }
+        sprites.RemoveRange(damagedSegmentIndex, sprites.Count - damagedSegmentIndex);
+        yield return new WaitForSeconds(config.baseDeathDuration);
+        
+        if (damagedSegmentIndex == 0)
+            OnDamageDestroy();
+        else
+        {
+            tail = tempTail;
+            print("new tail");
+        }
+
+        damagedSegmentIndex = -1;
+        
+        print("end damage routine");
+    }
+
+    protected virtual void OnDamageDestroy()
+    {
+        Destroy(gameObject);
+    }
+
+    private IEnumerator DestroySegmentAnimationRoutine(int index)
+    {
+        float animDuration = config.GetOneSegmentDeathDuration(index);
+        
+        sprites[index].transform.DOScale(0, animDuration).SetEase(Ease.OutQuart)
+            .OnComplete(() => Destroy(sprites[index].gameObject));
+        
+        if (index == 0)
+            eyes.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart).OnComplete(() => Destroy(eyes.gameObject));
+
+        if (index == sprites.Count - 1)
+        {
+            print("start tail anim");
+            tail.transform.DOScale(0, animDuration).SetEase(Ease.OutQuart).OnComplete(() =>
+            {
+                Destroy(tail.gameObject);
+                print("destroy tail");
+            });
+        }
+
+        yield return new WaitForSeconds(animDuration / 3);
     }
 
     public float GetDeathRoutineDuration()
@@ -213,7 +288,24 @@ public abstract class Snake : MonoBehaviour
             float animDuration = config.GetOneSegmentDeathDuration(i);
             duration += animDuration / 3;
         }
+        
+        print($"death routine duration {duration}");
+        
+        return duration;
+    }
 
+    public float GetDamagedRoutineDuration()
+    {
+        if (damagedSegmentIndex < 0)
+            return 0f;
+        
+        float duration = config.baseDeathDuration;
+        for (int i = damagedSegmentIndex; i < segments.Count; i++)
+        {
+            float animDuration = config.GetOneSegmentDeathDuration(i);
+            duration += animDuration / 3;
+        }
+        
         return duration;
     }
     
@@ -231,10 +323,5 @@ public abstract class Snake : MonoBehaviour
         return new Vector3(0, 0, 0);
     }
 
-    public List<Vector2Int> GetSegments()
-    {
-        var list = new List<Vector2Int>();
-        list.AddRange(segments);
-        return list;
-    }
+    public List<Vector2Int> GetSegments() => segments.ToList();
 }

@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,12 +8,21 @@ using UnityEngine.Serialization;
 
 public class MainProcess : MonoBehaviour
 {
+    public static MainProcess Instance;
+    
     [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
     [SerializeField] private List<Vector2Int> startPlayerSegments;
     [SerializeField] private List<Vector2Int> startEnemiesPositions;
 
     private int turn;
+    private IEnumerator mainProcessCoroutine;
     
+    private void Awake()
+    {
+        Instance = this;
+        Application.targetFrameRate = 60;
+    }
+
     private void Start()
     {
         Player.Instance.Init(startPlayerSegments);
@@ -21,7 +31,7 @@ public class MainProcess : MonoBehaviour
             EnemyController.Instance.SpawnEnemy(startEnemiesPositions[i], "enemy" + i);
         }
 
-        StartCoroutine(ProcessRoutine());
+        StartCoroutine(mainProcessCoroutine = ProcessRoutine());
     }
 
     private void Update()
@@ -48,18 +58,28 @@ public class MainProcess : MonoBehaviour
             if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
                 yield return Player.Instance.DeathRoutine(direction);
-                UI.Instance.OpenDeathScene();
-                yield break;
+                OnPlayerDestroy();
             }
-            
-            Player.Instance.CheckConsumable(direction);
-            yield return Player.Instance.Move(direction);
+
+            yield return Player.Instance.PlayerTurn(direction);
+            yield return null;
             
             yield return EnemyController.Instance.EnemyTurn();
+            yield return null;
             
             ConsumablesController.Instance.Tick(turn);
             
             //EnemyController.Instance.CheckCap(turn);
+        }
+    }
+
+    public void OnPlayerDestroy()
+    {
+        if (mainProcessCoroutine != null)
+        {
+            StopCoroutine(mainProcessCoroutine);
+            print("on player destroy");
+            UI.Instance.OpenDeathScene();
         }
     }
 

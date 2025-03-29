@@ -16701,7 +16701,7 @@ Grid:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1092323718}
   m_Enabled: 1
-  m_CellSize: {x: 0.5, y: 0.5, z: 1}
+  m_CellSize: {x: 1, y: 1, z: 1}
   m_CellGap: {x: 0, y: 0, z: 0}
   m_CellLayout: 0
   m_CellSwizzle: 0
@@ -32606,6 +32606,9 @@ MonoBehaviour:
   - consumable: {fileID: 5214792090388594501, guid: 86096ea58d61c114f82599123f4caf3a, type: 3}
     startSpawnDelay: 0
     randomSpawnTime: {x: 2, y: 4}
+  - consumable: {fileID: 3922902624356875738, guid: 793e59388f636b7419dbb183a41afb79, type: 3}
+    startSpawnDelay: 0
+    randomSpawnTime: {x: 10, y: 20}
 --- !u!1 &2133604390
 GameObject:
   m_ObjectHideFlags: 0

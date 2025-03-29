@@ -31,6 +31,8 @@ public class ConsumablesController : MonoBehaviour
     {
         var suitablePositions = GetSuitablePositions();
 
+        print("consumable tick");
+        
         for (var i = 0; i < consumableInfos.Length; i++)
         {
             var consumableInfo = consumableInfos[i];
@@ -44,7 +46,7 @@ public class ConsumablesController : MonoBehaviour
                 var randPos = suitablePositions[Random.Range(0, suitablePositions.Count)];
                 var pos = new Vector3(randPos.x, randPos.y, transform.position.z);
                 var obj = Instantiate(consumableInfo.consumable, pos, Quaternion.identity, transform);
-                obj.name = "consumable" + i;
+                obj.name = "consumable" + turn;
                 Consumables.Add(obj);
                 suitablePositions.Remove(randPos);
                 nextSpawnTimes[consumableInfo.consumable] = turn + Random.Range(consumableInfo.randomSpawnTime.x,
@@ -65,7 +67,7 @@ public class ConsumablesController : MonoBehaviour
                 var pos = new Vector2Int(x, y);
                 if (Consumables.Any(c => c.Pos == pos)) continue;
                 if (playerSegments.Any(s => s == pos)) continue;
-                if (Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
+                if (playerSegments.Count > 0 && Vector2Int.Distance(pos, playerSegments[0]) < minDistanceToSnake) continue;
                 if (EnemyController.Instance.Enemies.Any(e => e.GetSegments().Any(s => s == pos))) continue;
                 if (EnemyController.Instance.Enemies.Any(e => Vector2Int.Distance(pos, e.GetSegments()[0]) < minDistanceToSnake)) continue;
                 suitablePositions.Add(pos);

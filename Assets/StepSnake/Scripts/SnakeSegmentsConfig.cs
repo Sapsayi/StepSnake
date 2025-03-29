@@ -3,6 +3,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SnakeSegmentsConfig", menuName = "Scriptable Objects/SnakeSegmentsConfig")]
 public class SnakeSegmentsConfig : ScriptableObject
 {
+    public Color playerColor;
+    public Color enemyColor;
+    
     public float moveAnimDuration;
 
     public float baseDeathDuration;
