@@ -30,27 +30,29 @@ public class ConsumablesController : MonoBehaviour
     public void Tick(int turn)
     {
         var suitablePositions = GetSuitablePositions();
-
-        print("consumable tick");
         
-        for (var i = 0; i < consumableInfos.Length; i++)
+        foreach (var consumableInfo in consumableInfos)
         {
-            var consumableInfo = consumableInfos[i];
             if (suitablePositions.Count == 0) return;
             if (turn < consumableInfo.startSpawnDelay) return;
+            
             var nextSpawnTime = nextSpawnTimes.GetValueOrDefault(consumableInfo.consumable,
                 Random.Range(consumableInfo.randomSpawnTime.x, consumableInfo.randomSpawnTime.y + 1));
             nextSpawnTimes.TryAdd(consumableInfo.consumable, nextSpawnTime);
+            
             if (turn >= nextSpawnTime)
             {
                 var randPos = suitablePositions[Random.Range(0, suitablePositions.Count)];
                 var pos = new Vector3(randPos.x, randPos.y, transform.position.z);
                 var obj = Instantiate(consumableInfo.consumable, pos, Quaternion.identity, transform);
-                obj.name = "consumable" + turn;
+                
+                obj.name = consumableInfo.consumable.name + turn;
+                print($"Instantiate {consumableInfo.consumable.name}");
                 Consumables.Add(obj);
                 suitablePositions.Remove(randPos);
                 nextSpawnTimes[consumableInfo.consumable] = turn + Random.Range(consumableInfo.randomSpawnTime.x,
                     consumableInfo.randomSpawnTime.y + 1);
+                break;
             }
         }
     }

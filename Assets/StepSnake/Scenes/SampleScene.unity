@@ -11338,7 +11338,6 @@ MonoBehaviour:
   baseSegmentPrefab: {fileID: 3244609269427170800, guid: 214d54c3b8725a448a36d519b33cbaa5, type: 3}
   eyesPrefab: {fileID: 6437838949003983918, guid: 814ddbe3b92d96749929d198933809d7, type: 3}
   tailPrefab: {fileID: 6437838949003983918, guid: b99a5e39666764f4f8a41c2c3761c722, type: 3}
-  color: {r: 0, g: 0.8734226, b: 1, a: 1}
   config: {fileID: 11400000, guid: 5c46af53be6ff7f4cbc450a596485d1e, type: 2}
 --- !u!1 &729447535
 GameObject:
@@ -32609,6 +32608,9 @@ MonoBehaviour:
   - consumable: {fileID: 3922902624356875738, guid: 793e59388f636b7419dbb183a41afb79, type: 3}
     startSpawnDelay: 0
     randomSpawnTime: {x: 10, y: 20}
+  - consumable: {fileID: 1198731646034618999, guid: 5c21583290d4a2140bc730dff2c6d1a5, type: 3}
+    startSpawnDelay: 0
+    randomSpawnTime: {x: 20, y: 30}
 --- !u!1 &2133604390
 GameObject:
   m_ObjectHideFlags: 0

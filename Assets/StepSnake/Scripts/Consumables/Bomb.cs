@@ -11,8 +11,6 @@ public class Bomb : Consumable
     
     public override void Activate(Snake snake)
     {
-        transform.localScale = Vector3.zero;
-
         var damagedPositions = GetDamagedPositions();
         
         if (snake is Player)
