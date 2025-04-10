@@ -19,5 +19,6 @@ public class Enemy : Snake
     {
         base.OnDamageDestroy();
         EnemyController.Instance.Enemies.Remove(this);
+        MainProcess.Instance.OnEnemyDestroy();
     }
 }

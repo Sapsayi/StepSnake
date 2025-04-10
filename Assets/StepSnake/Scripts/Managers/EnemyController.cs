@@ -100,6 +100,7 @@ public class EnemyController : MonoBehaviour
             {
                 uniTasks.Add(enemy.DeathRoutine(direction, true));
                 Enemies.Remove(enemy);
+                MainProcess.Instance.OnEnemyDestroy();
             }
             else
             {

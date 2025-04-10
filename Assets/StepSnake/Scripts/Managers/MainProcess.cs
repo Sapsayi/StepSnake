@@ -14,8 +14,10 @@ public class MainProcess : MonoBehaviour
     [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
     [SerializeField] private List<Vector2Int> startPlayerSegments;
     [SerializeField] private List<Vector2Int> startEnemiesPositions;
+    [SerializeField] private int killGoal;
 
     private int turn;
+    private int killCount;
     private CancellationTokenSource mainProcessCancellationToken = new();
     
     private void Awake()
@@ -55,6 +57,7 @@ public class MainProcess : MonoBehaviour
             } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
 
             turn++;
+            UI.Instance.SetTurnText(turn);
 
             if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
@@ -71,7 +74,7 @@ public class MainProcess : MonoBehaviour
             
             ConsumablesController.Instance.Tick(turn);
             
-            //EnemyController.Instance.CheckCap(turn);
+            EnemyController.Instance.CheckCap(turn);
         }
     }
 
@@ -79,6 +82,12 @@ public class MainProcess : MonoBehaviour
     {
         mainProcessCancellationToken?.Cancel();
         UI.Instance.OpenDeathScene();
+    }
+
+    public void OnEnemyDestroy()
+    {
+        killCount++;
+        UI.Instance.SetKillText(killCount, killGoal);
     }
 
     private Vector2Int GetMoveDirection()
