@@ -144,7 +144,9 @@ namespace SingularityGroup.HotReload {
                     RegisterNewFieldInitializers(response);
                     HandleReshapedFields(response);
                     RemoveOldFieldInitializers(response);
+#if UNITY_EDITOR
                     RegisterInspectorFieldAttributes(result, response);
+#endif
 
                     HandleMethodPatchResponse(response, result);
                     patchHistory.Add(response);

@@ -8,7 +8,7 @@ namespace SingularityGroup.HotReload {
         public static bool IsAssetStoreBuild => true;
 
         
-        public const string Version = "1.13.2";
+        public const string Version = "1.13.4";
         // Never higher than Version
         // Used for the download
         public const string ServerVersion = "1.13.2";

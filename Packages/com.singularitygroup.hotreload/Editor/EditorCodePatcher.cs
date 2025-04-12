@@ -72,7 +72,11 @@ namespace SingularityGroup.HotReload.Editor {
             return !UnityFieldHelper.IsFieldHidden(__instance.ParentType, __instance.Name);
         }
         internal static MethodInfo OdinPropertyDrawPrefixInfo = typeof(EditorCodePatcher).GetMethod("DrawPrefix", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+        #if UNITY_2021_1_OR_NEWER
         internal static MethodInfo OdinPropertyDrawInfo = typeof(Sirenix.OdinInspector.Editor.InspectorProperty)?.GetMethod("Draw", 0, BindingFlags.Instance | BindingFlags.Public, null, new Type[]{}, null);
+        #else
+        internal static MethodInfo OdinPropertyDrawInfo = typeof(Sirenix.OdinInspector.Editor.InspectorProperty)?.GetMethod("Draw", BindingFlags.Instance | BindingFlags.Public, null, new Type[]{}, null);
+        #endif
         internal static MethodInfo DrawOdinInspectorInfo = typeof(Sirenix.OdinInspector.Editor.OdinEditor)?.GetMethod("DrawOdinInspector", BindingFlags.NonPublic | BindingFlags.Instance);
         #else
         internal static MethodInfo OdinPropertyDrawPrefixInfo = null;
