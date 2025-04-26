@@ -9,22 +9,19 @@ public class ConsumablesController : MonoBehaviour
     public static ConsumablesController Instance;
 
     [SerializeField] private float minDistanceToSnake;
-    [SerializeField] private ConsumableInfo[] consumableInfos;
-    
-    [System.Serializable]
-    public struct ConsumableInfo
-    {
-        public Consumable consumable;
-        public int startSpawnDelay;
-        public Vector2Int randomSpawnTime;
-    }
 
     public readonly List<Consumable> Consumables = new();
+    private LevelInfo.ConsumableInfo[] consumableInfos;
     private readonly Dictionary<Consumable, int> nextSpawnTimes = new();
     
     private void Awake()
     {
         Instance = this;
+    }
+
+    public void Init(LevelInfo.ConsumableInfo[] consumableInfos)
+    {
+        this.consumableInfos = consumableInfos;
     }
 
     public void Tick(int turn)

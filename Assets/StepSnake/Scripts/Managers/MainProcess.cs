@@ -2,23 +2,39 @@ using System;
 using Cysharp.Threading.Tasks;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Threading;
+using NaughtyAttributes;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 
+[DefaultExecutionOrder(-9999)]
 public class MainProcess : MonoBehaviour
 {
     public static MainProcess Instance;
-    
-    [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
-    [SerializeField] private List<Vector2Int> startPlayerSegments;
-    [SerializeField] private List<Vector2Int> startEnemiesPositions;
-    [SerializeField] private int killGoal;
 
+    [SerializeField] private LevelInfo[] levelInfos;
+    [SerializeField] private SnakeSegmentsConfig snakeSegmentsConfig;
+    [Space] 
+    [SerializeField] private int debugLevel;
+
+    public Action<int> OnPlayerConsumeAppleAction;
+    public Action<int> OnKillAction;
+    public Action<int> OnNewTurnAction;
+
+    private LevelInfo curLevel;
     private int turn;
     private int killCount;
+    private int appleCount;
     private CancellationTokenSource mainProcessCancellationToken = new();
+
+    [Button]
+    private void SetLevel()
+    {
+        PlayerPrefs.SetInt("level", debugLevel);
+        print($"set level {debugLevel}");
+    }
     
     private void Awake()
     {
@@ -26,15 +42,21 @@ public class MainProcess : MonoBehaviour
         Application.targetFrameRate = 60;
     }
 
-    private void Start()
+    private async void Start()
     {
-        Player.Instance.Init(startPlayerSegments);
-        for (var i = 0; i < startEnemiesPositions.Count; i++)
-        {
-            EnemyController.Instance.SpawnEnemy(startEnemiesPositions[i], "enemy" + i);
-        }
+        if (!PlayerPrefs.HasKey("level"))
+            PlayerPrefs.SetInt("level", 0);
+        
+        curLevel = levelInfos[PlayerPrefs.GetInt("level")];
 
-        ProcessTask(mainProcessCancellationToken.Token).Forget();
+        UI.Instance.SetLevelText(PlayerPrefs.GetInt("level"));
+        UI.Instance.SetLevelPanelAlpha(1f);
+        
+        await UniTask.WaitForSeconds(1f);
+        
+        UI.Instance.StartLevelPanelFade(0f, 0.5f);
+        
+        StartLevel(curLevel);
     }
 
     private void Update()
@@ -43,6 +65,21 @@ public class MainProcess : MonoBehaviour
         {
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
+    }
+
+    private void StartLevel(LevelInfo levelInfo)
+    {
+        EnemyController.Instance.Init(levelInfo.enemyCaps);
+        ConsumablesController.Instance.Init(levelInfo.consumableInfos);
+        UI.Instance.Init(levelInfo.goals);
+        
+        Player.Instance.Init(levelInfo.startPlayerSegments);
+        for (var i = 0; i < levelInfo.startEnemiesPositions.Count; i++)
+        {
+            EnemyController.Instance.SpawnEnemy(levelInfo.startEnemiesPositions[i], "enemy" + i);
+        }
+        
+        ProcessTask(mainProcessCancellationToken.Token).Forget();
     }
 
     private async UniTask ProcessTask(CancellationToken token)
@@ -57,7 +94,8 @@ public class MainProcess : MonoBehaviour
             } while (direction == Vector2Int.zero || !Player.Instance.CanMove(direction));
 
             turn++;
-            UI.Instance.SetTurnText(turn);
+            OnNewTurnAction?.Invoke(turn);
+            CheckGoals().Forget();
 
             if (Player.Instance.CheckSelfKill(direction) || Player.Instance.CheckEnemies(direction))
             {
@@ -87,7 +125,59 @@ public class MainProcess : MonoBehaviour
     public void OnEnemyDestroy()
     {
         killCount++;
-        UI.Instance.SetKillText(killCount, killGoal);
+        OnKillAction?.Invoke(killCount);
+        CheckGoals().Forget();
+    }
+
+    public void OnPlayerConsumeApple()
+    {
+        appleCount++;
+        OnPlayerConsumeAppleAction?.Invoke(appleCount);
+        CheckGoals().Forget();
+    }
+
+    private async UniTask CheckGoals()
+    {
+        foreach (var goal in curLevel.goals)
+        {
+            switch (goal.type)
+            {
+                case LevelGoalType.AppleCount:
+                    if (appleCount < goal.value)
+                        return;
+                    break;
+                case LevelGoalType.SnakeLength:
+                    if (Player.Instance.GetSegments().Count < goal.value)
+                        return;
+                    break;
+                case LevelGoalType.KillCount:
+                    if (killCount < goal.value)
+                        return;
+                    break;
+                case LevelGoalType.TurnCount:
+                    if (turn < goal.value)
+                        return;
+                    break;
+                case LevelGoalType.FillAllCells:
+                    if (Player.Instance.GetSegments().Count < GridManager.Instance.GetAllCellsCount())
+                        return;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+        
+        mainProcessCancellationToken?.Cancel();
+        PlayerPrefs.SetInt("level", PlayerPrefs.GetInt("level") + 1);
+        
+        await UniTask.WaitForSeconds(2f);
+        
+        UI.Instance.SetLevelText(PlayerPrefs.GetInt("level"));
+        UI.Instance.StartLevelPanelFade(1f, 0.5f);
+
+        await UniTask.WaitForSeconds(1.5f);
+        
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
     private Vector2Int GetMoveDirection()

@@ -14,15 +14,20 @@ public class EnemyController : MonoBehaviour
     [SerializeField] private Enemy enemyPrefab;
     [SerializeField] private float minSpawnDistanceToSnake;
     [SerializeField] private SnakeSegmentsConfig config;
-    [SerializeField] private int[] caps;
-
+    
     public readonly List<Enemy> Enemies = new();
 
+    private int[] caps;
     private Dictionary<Enemy, Consumable> assignedConsumables = new();
     
     private void Awake()
     {
         Instance = this;
+    }
+
+    public void Init(int[] enemyCaps)
+    {
+        caps = enemyCaps;
     }
 
     public void CheckCap(int turn)

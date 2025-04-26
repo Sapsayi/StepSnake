@@ -21,6 +21,8 @@ public abstract class Snake : MonoBehaviour
     private Vector2Int previousTailPos;
     private int damagedSegmentIndex = -1;
 
+    public Action<int> OnLengthChange;
+
     public void Init(List<Vector2Int> segments)
     {
         this.segments.AddRange(segments);
@@ -29,6 +31,8 @@ public abstract class Snake : MonoBehaviour
         tail = Instantiate(tailPrefab, transform).transform;
         eyes.transform.position = new Vector3(this.segments[0].x, this.segments[0].y, transform.position.z - 1);
         tail.transform.position = new Vector3(this.segments[0].x, this.segments[0].y, transform.position.z - 1);
+        
+        OnLengthChange?.Invoke(this.segments.Count);
         
         UpdateSprites(new Vector2Int(0, 0));
     }
@@ -89,6 +93,7 @@ public abstract class Snake : MonoBehaviour
     public void AddLastSegment()
     {
         segments.Add(segments[^1]);
+        OnLengthChange?.Invoke(segments.Count);
     }
     
     
@@ -230,6 +235,8 @@ public abstract class Snake : MonoBehaviour
         }
         
         segments.RemoveRange(damagedSegmentIndex, segments.Count - damagedSegmentIndex);
+        
+        OnLengthChange?.Invoke(segments.Count);
         
         for (int i = damagedSegmentIndex; i < sprites.Count; i++)
         {

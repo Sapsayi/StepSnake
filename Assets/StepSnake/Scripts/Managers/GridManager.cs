@@ -36,4 +36,6 @@ public class GridManager : MonoBehaviour
     {
         return (pos.x >= 0 && pos.x < gridSize.x) && (pos.y >= 0 && pos.y < gridSize.y);
     }
+
+    public int GetAllCellsCount() => gridSize.x * gridSize.y;
 }

@@ -6,6 +6,8 @@ public class Apple : Consumable
     {
         Destroy(gameObject);
         snake.AddLastSegment();
+        if (snake is Player)
+            MainProcess.Instance.OnPlayerConsumeApple();
         ConsumablesController.Instance.RemoveConsumable(this);
     }
 }

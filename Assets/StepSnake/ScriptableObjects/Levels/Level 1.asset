@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9709bc595d3ad94db498455dd360714, type: 3}
+  m_Name: Level 1
+  m_EditorClassIdentifier: 
+  goals:
+  - type: 1
+    value: 5
+  startPlayerSegments:
+  - {x: 9, y: 5}
+  startEnemiesPositions:
+  - {x: 9, y: 13}
+  - {x: 13, y: 9}
+  - {x: 5, y: 9}
+  enemyCaps: 00000000000000000000000000000000
+  consumableInfos:
+  - consumable: {fileID: 5214792090388594501, guid: 86096ea58d61c114f82599123f4caf3a, type: 3}
+    startSpawnDelay: 0
+    randomSpawnTime: {x: 3, y: 6}
+  - consumable: {fileID: 1198731646034618999, guid: 5c21583290d4a2140bc730dff2c6d1a5, type: 3}
+    startSpawnDelay: 0
+    randomSpawnTime: {x: 10, y: 20}
+  - consumable: {fileID: 3922902624356875738, guid: 793e59388f636b7419dbb183a41afb79, type: 3}
+    startSpawnDelay: 0
+    randomSpawnTime: {x: 20, y: 40}
